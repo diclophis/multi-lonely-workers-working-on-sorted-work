@@ -19,8 +19,10 @@ class Worker
     ["tmp_events", integration_id].join(":")
   end
 
-  def self.add_event(integration_id, event_id)
-    Resque.redis.zadd(set_name_for_all_events(integration_id), Time.now.to_f, event_id)
+  def self.add_events(integration_id, event_ids)
+    event_ids.each do |event_id|
+      Resque.redis.zadd(set_name_for_all_events(integration_id), Time.now.to_f, event_id)
+    end
     Resque.enqueue(self, integration_id)
   end
 
@@ -42,8 +44,8 @@ class Worker
     range = Resque.redis.zrevrangebyscore(set_name_for_tmp_sorted_events(integration_id), "+inf", 1, {:with_scores => true})
     range.reverse.each do |event_id, score|
       # do_work_with(event_id)
-      puts [:starting, integration_id, event_id].inspect
-      sleep 10
+      #puts [:starting, integration_id, event_id].inspect
+      sleep 5
       puts [:processed, integration_id, event_id].inspect
       Resque.redis.zadd(set_name_for_processed_events(integration_id), score, event_id)
     end
